@@ -55,9 +55,9 @@ class GzipQueue(Queue):
             self.not_full.release()
 
     def get(self):
-    """get an item from the queue.
+        """get an item from the queue.
 
-    will raise EOFError when the queue is emptied"""
+        will raise EOFError when the queue is emptied"""
         self.not_empty.acquire()
         try:
             if not self._q_cleared:
