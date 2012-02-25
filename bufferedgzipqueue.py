@@ -101,7 +101,7 @@ class GzipQueue(Queue):
         finally:
             self.not_empty.release()
 
-    def gets(self,number,block=True,timeout=False):
+    def gets(self,number,block=True,timeout=None):
         """Get multiple items, will block if the optional arguement 'block' is
         set to True, or return 'number' items, or as many as are available across
         the queue and file. Will raise Empty if nothing is immediately available
