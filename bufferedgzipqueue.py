@@ -136,14 +136,17 @@ class GzipQueue(Queue):
                     try:
                         self.gzip_w.close()
                         for _ in xrange(number):
-                            items.append(self._gzipGet())
+                            try:
+                                items.append(self._gzipGet())
+                            except IOError:
+                                self.gzip_w.close()
+                                items.append(self._gzipGet())
                         return items
                     except EOFError:
                         if items:
                             return items
                     finally:
-                        if not self._complete:
-                            self.gzip_w= gzip.open(self.gzip_path,"ab")
+                        self.gzip_w= gzip.open(self.gzip_path,"ab")
                     self._blockCheck(block,timeout)
         finally:
             self.not_empty.release()
