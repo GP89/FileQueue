@@ -10,13 +10,15 @@ class GzipQueue(Queue):
 
     def __init__(self,max_buffer_size,gzip_path=None):
         """Class to a thread safe buffer-file object. put objects into a buffer,
-        any overflow will get put to a gzip file that can be accessed when the
-        writer has finished.
+        any overflow will get put to a gzip file that will be accessed any time
+        the buffer is empty.
 
         :param int 'max_buffer_size': Set the maximum number of items to be held
-           in the buffer (Note: set to 0 for no limit)
+           in the buffer (Note: setting to 0 will act like a normal Queue with no,
+           with no limit. In this case no gzip file will get created)
         :param string 'gzip_path': Path to create the file for the overflowed items
-          (Note this file wont get cleaned up)
+          (Note this file wont get cleaned up and will replace anything at that
+          path which already exists)
 
         Note: The order items are returned is FIFO, unless the buffer overflows in
         which case you cannot rely on the order of returned items to be the same
