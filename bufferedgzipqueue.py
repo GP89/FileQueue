@@ -1,5 +1,5 @@
 import gzip
-import pickle
+import cPickle
 from time import time as _time
 from Queue import Queue,Empty
 
@@ -8,7 +8,7 @@ class Complete(Exception):
 
 class GzipQueue(Queue):
 
-    def __init__(self,max_buffer_size,gzip_path):
+    def __init__(self,max_buffer_size,gzip_path=None):
         """Class to a thread safe buffer-file object. put objects into a buffer,
         any overflow will get put to a gzip file that can be accessed when the
         writer has finished.
@@ -28,9 +28,10 @@ class GzipQueue(Queue):
         Queue.__init__(self,max_buffer_size)
         self._complete= False
         self._q_cleared= False
-        self.gzip_path= gzip_path
-        self.gzip_w= gzip.open(gzip_path,"wb")
-        self.gzip_r= gzip.open(gzip_path,"rb")
+        if max_buffer_size > 0:
+            self.gzip_path= gzip_path
+            self.gzip_w= gzip.open(gzip_path,"wb")
+            self.gzip_r= gzip.open(gzip_path,"rb")
 
     def put(self,item):
         """put an item into the queue (must be pickle-able)
@@ -43,6 +44,7 @@ class GzipQueue(Queue):
             else:
                 self._put(item)
                 self.not_empty.notify()
+            self.unfinished_tasks+=1
         finally:
             self.not_full.release()
 
@@ -53,15 +55,16 @@ class GzipQueue(Queue):
 
         self.not_full.acquire()
         try:
-            if self.maxsize <= 0:
-                q_put= len(items)
-            else:
+            if self.maxsize > 0:
                 q_put= self.maxsize-self._qsize()
+            else:
+                q_put= len(items)
             for item in items[:q_put]:
                 Queue._put(self,item)
                 self.not_empty.notify()
             for item in items[q_put:]:
                 self._gzipPut(item)
+            self.unfinished_tasks+=q_put
         finally:
             self.not_full.release()
 
@@ -89,20 +92,21 @@ class GzipQueue(Queue):
                     self.not_full.notify()
                     return item
                 else:
-                    try:
-                        self.gzip_w.close()
-                        return self._gzipGet()
-                    except EOFError:
-                        pass
-                    finally:
-                        if not self._complete:
-                            self.gzip_w= gzip.open(self.gzip_path,"ab")
+                    if self.maxsize > 0:
+                        try:
+                            self.gzip_w.close()
+                            return self._gzipGet()
+                        except EOFError:
+                            pass
+                        finally:
+                            if not self._complete:
+                                self.gzip_w= gzip.open(self.gzip_path,"ab")
                     self._blockCheck(block,timeout)
         finally:
             self.not_empty.release()
 
     def gets(self,number,block=True,timeout=None):
-        """Get multiple items, will block if the optional arguement 'block' is
+        """Get multiple items, will block if the optional argument 'block' is
         set to True, or return 'number' items, or as many as are available across
         the queue and file. Will raise Empty if nothing is immediately available
         and 'block' is set to False, or if 'block' is set to True and nothing is
@@ -133,20 +137,21 @@ class GzipQueue(Queue):
                         self.not_full.notify()
                     return items
                 else:
-                    try:
+                    if self.maxsize > 0:
                         self.gzip_w.close()
-                        for _ in xrange(number):
-                            try:
-                                items.append(self._gzipGet())
-                            except IOError:
-                                self.gzip_w.close()
-                                items.append(self._gzipGet())
-                        return items
-                    except EOFError:
-                        if items:
+                        try:
+                            for _ in xrange(number):
+                                try:
+                                    items.append(self._gzipGet())
+                                except IOError:
+                                    self.gzip_w.close()
+                                    items.append(self._gzipGet())
                             return items
-                    finally:
-                        self.gzip_w= gzip.open(self.gzip_path,"ab")
+                        except EOFError:
+                            if items:
+                                return items
+                        finally:
+                            self.gzip_w= gzip.open(self.gzip_path,"ab")
                     self._blockCheck(block,timeout)
         finally:
             self.not_empty.release()
@@ -176,11 +181,11 @@ class GzipQueue(Queue):
 
     def _gzipPut(self,item):
         """for use internally, puts an item into the gzip file"""
-        pickle.dump(item,self.gzip_w)
+        cPickle.dump(item,self.gzip_w)
 
     def _gzipGet(self):
         """for use internally, gets an item from the gzip file"""
-        return pickle.load(self.gzip_r)
+        return cPickle.load(self.gzip_r)
 
     def complete(self):
         """Call once all 'putters' have finished putting work into the queue,
@@ -188,10 +193,11 @@ class GzipQueue(Queue):
         by raising Complete exceptions after they have emptied the Queue"""
         self.all_tasks_done.acquire()
         try:
-            self.gzip_w.close()
+            if self.maxsize > 0:
+                self.gzip_w.close()
             self._complete=True
             self.all_tasks_done.notify_all()
-            self.not_empty.notify()
+            self.not_empty.notifyAll()
             self.not_full.notify()
         finally:
             self.all_tasks_done.release()
