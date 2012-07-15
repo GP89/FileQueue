@@ -1,9 +1,13 @@
+import sys
 import gzip
 import cPickle
 from time import time as _time
 from Queue import Queue,Empty
 
 class Complete(Exception):
+    pass
+
+class PutException(Exception):
     pass
 
 class GzipQueue(Queue):
@@ -68,17 +72,17 @@ class GzipQueue(Queue):
             self.checkException(failed)
 
     def checkException(self,failed):
-        err= failed.get("exception")
-        if err:
-            err.items= failed["items"]
-            err.message+=" (check attribute 'items' for list of items unable to put into queue)"
-            raise err
+        exc_info= failed.get("exc_info")
+        if exc_info and all(exc_info):
+            err= PutException("%s: %s (check exception attribute 'items' for list of items unable to put into queue)"%(exc_info[0],exc_info[1].message))
+            err.items= failed.get("items")
+            raise err.__class__, err, exc_info[2]
 
     def _gzipPutFail(self,failed,item):
         try:
             self._gzipPut(item)
         except Exception as err:
-            failed["exception"]=err
+            failed["exc_info"]=sys.exc_info()
             failed["items"].append(item)
 
     def _get(self):
