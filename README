@@ -1,0 +1,8 @@
+FileQueue is a thread-safe queue which is a subclass of Queue.Queue from the
+stdlib.
+
+FileQueue will overflow into a compressed file if the number of items
+exceeds maxsize, instead of blocking or raising Full like the regular Queue.
+
+The motivation came from wanting to queue a lot of work without consuming
+lots of memory.

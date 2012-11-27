@@ -1,5 +1,5 @@
 import gzip
-import heapq
+import bisect
 import tempfile
 from time import time as _time
 try:
@@ -11,9 +11,9 @@ try:
 except ImportError:
     from queue import Queue,Empty,Full
 
-DEFAULT = None
+__all__ = ["Empty", "Full", "FileQueue", "PriorityFileQueue"]
 
-__all__= ["Empty", "Full", "FileQueue", "PriorityFileQueue"]
+DEFAULT = None
 
 class FileQueue(Queue):
     def __init__(self, maxsize=0):
@@ -171,11 +171,12 @@ class PriorityFileQueue(FileQueue):
         queue= self._queue_index.get(priority)
         if not queue:
             queue= FileQueue(self._max_buffer_size)
-            heapq.heappush(self._queues,(priority,queue))
+            bisect.insort(self._queues,(priority,queue))
             self._queue_index[priority]= queue
         return queue
 
     def put(self, item, block=True, timeout=None, priority=DEFAULT):
+        #I'm not very keen on the priority kw but for lack of a better idea..
         self.not_full.acquire()
         try:
             if priority is DEFAULT:
