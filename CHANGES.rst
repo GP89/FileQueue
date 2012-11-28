@@ -6,7 +6,7 @@ Changelog
 
 - Fix for ``PriorityFileQueue`` where it wasn't returning items in the correct order according to the priority.
 
-- Added ``import *`` import ``__init__.py`` to make the namespace a bit nicer.
+- Added ``import *`` into ``__init__.py`` to make the namespace a bit nicer.
 
 - Added the unit tests from stdlibs ``Queue`` (quickly edited out the full checks and ``LifoQueue`` tests)
 

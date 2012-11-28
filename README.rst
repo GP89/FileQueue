@@ -7,11 +7,11 @@ Overview
 
 :mod:`filequeue` is a Python library that provides a thread-safe queue which is a subclass of ``Queue.Queue`` from the stdlib.
 
-``filequeue.FileQueue`` will overflow into a compressed file if the number of items exceeds maxsize, instead of blocking or raising Full like the regular ``Queue.Queue``.
+``filequeue.FileQueue`` will overflow into a compressed file if the number of items exceeds maxsize, instead of blocking or raising ``Full`` like the regular ``Queue.Queue``.
 
 There is also a ``filequeue.PriorityFileQueue`` and there will hopefully also be a LIFO Queue if I can figure out a nice way of implementing it.
 
-**Note** ``filequeue.FileQueue`` will only behave the same as ``Queue.Queue`` if it is initialised with ``maxsize=0`` (the default). See ``__init__`` docstring for details
+**Note** ``filequeue.FileQueue`` will only behave the same as ``Queue.Queue`` if it is initialised with ``maxsize=0`` (the default). See ``__init__`` docstring for details (``help(FileQueue)``)
 
 **Note** ``filequeue.PriorityFileQueue`` won't currently work exactly the same as a straight out replacement for ``Queue.PriorityQueue``. The interface is very slightly different (extra optional kw argument on ``put`` and ``__init__``), although it will work it won't behave the same. It might still be useful to people though and hopefully I'll be able to resolve this in a future version.
 
