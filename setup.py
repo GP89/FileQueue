@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "filequeue",
-    version = "0.2.3",
+    version = "0.3.0",
     author = "Paul Wiseman",
     author_email = "poalman@gmail.com",
     description = ("A thread-safe queue object which is interchangeable with "
