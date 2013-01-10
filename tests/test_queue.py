@@ -97,7 +97,7 @@ class BaseFileQueueTest(unittest.TestCase, BlockingTestMixin):
             q.put(333)
             q.put(222)
         target_order = dict(FileQueue = [111, 333, 222],
-#                            LifoFileQueue = [222, 333, 111],
+                            LifoFileQueue = [222, 333, 111],
                             PriorityFileQueue = [111, 222, 333])
         actual_order = [q.get(), q.get(), q.get()]
         self.assertEqual(actual_order, target_order[q.__class__.__name__],
@@ -191,7 +191,7 @@ class BaseFileQueueTest(unittest.TestCase, BlockingTestMixin):
     def test_simple_queue(self):
         # Do it a couple of times on the same queue.
         # Done twice to make sure works with same instance reused.
-        q = self.type2test(QUEUE_SIZE)
+        q = self.type2test()
         self.simple_queue_test(q)
         self.simple_queue_test(q)
 
@@ -199,8 +199,8 @@ class BaseFileQueueTest(unittest.TestCase, BlockingTestMixin):
 class FileQueueTest(BaseFileQueueTest):
     type2test = filequeue.FileQueue
 
-#class LifoFileQueueTest(BaseFileQueueTest):
-#    type2test = filequeue.LifoFileQueue
+class LifoFileQueueTest(BaseFileQueueTest):
+    type2test = filequeue.LifoFileQueue
 
 class PriorityFileQueueTest(BaseFileQueueTest):
     type2test = filequeue.PriorityFileQueue
@@ -216,12 +216,12 @@ class FailingFileQueue(filequeue.FileQueue):
         self.fail_next_put = False
         self.fail_next_get = False
         filequeue.FileQueue.__init__(self, *args)
-    def _put_gzip(self,item):
+    def _put_file(self,item):
         if self.fail_next_put:
             self.fail_next_put = False
             raise FailingFileQueueException, "You Lose"
         return filequeue.FileQueue._put(self,item)
-    def _get_gzip(self):
+    def _get_file(self):
         if self.fail_next_get:
             self.fail_next_get = False
             raise FailingFileQueueException, "You Lose"
@@ -330,7 +330,7 @@ class FailingFileQueueTest(unittest.TestCase, BlockingTestMixin):
 
 def test_main():
     test_support.run_unittest(FileQueueTest,
-#                              LifoFileQueueTest,
+                              LifoFileQueueTest,
                               PriorityFileQueueTest,
                               FailingFileQueueTest)
 
