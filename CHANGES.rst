@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.3.0 (2013-01-10)
+------------------
+
+- Added ``LifoFileQueue`` implementation that returns the most recently added items first
+
+- Reverted the file type from gzip to a regular file for the time being
+
 0.2.3 (2012-11-27)
 ------------------
 
