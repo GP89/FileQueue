@@ -7,13 +7,13 @@ def read(fname):
 
 setup(
     name = "filequeue",
-    version = "0.3.1",
+    version = "0.3.2",
     author = "Paul Wiseman",
     author_email = "poalman@gmail.com",
     description = ("A thread-safe queue object which is interchangeable with "
                    "the stdlib Queue. Any overflow goes into a compressed file "
                    "to keep excessive amounts of queued items out of memory"),
-    long_description = "\n\n".join((read("README.rst"), read("CHANGES.rst"))),
+    long_description = read("README.rst"),
     license = "BSD",
     keywords = "queue thread-safe file gzip",
     url = "http://pypi.python.org/pypi/filequeue",
