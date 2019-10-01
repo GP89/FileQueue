@@ -1,1 +1,1 @@
-from filequeue import *
+from .filequeue import *
