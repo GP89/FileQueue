@@ -232,7 +232,7 @@ class LifoFileQueue(FileQueue):
         self._position_format_str = "%%0%ii" % self._position_store_len
 
     def _format_pos(self, relative_position):
-        return self._position_format_str % relative_position
+        return (self._position_format_str % relative_position).encode()
 
     @contextmanager
     def _put_file_wrapper(self):
