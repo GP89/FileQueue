@@ -11,6 +11,7 @@ try:
     from Queue import Queue, Empty, Full
 except ImportError:
     from queue import Queue, Empty, Full
+from contextlib import contextmanager
 
 __all__ = ["Empty", "Full", "FileQueue", "PriorityFileQueue", "LifoFileQueue"]
 
@@ -50,11 +51,11 @@ class FileQueue(Queue):
         Queue.__init__(self, maxsize)
         self._contains = 0
         self._temp_file = tempfile.NamedTemporaryFile(suffix=".queue")
+        self._read_pos = self._write_pos = 0
         self._init_fds()
 
     def _init_fds(self):
-        self._file_write = _file_open(self._temp_file.name, "wb")
-        self._file_read = _file_open(self._temp_file.name, "rb")
+        self._file_write = self._file_read = self._temp_file
 
     def _buffer_size(self):
         """
@@ -76,8 +77,15 @@ class FileQueue(Queue):
         Queue._put(self, item)
         self._put_done()
 
+    @contextmanager
+    def _put_file_wrapper(self):
+        self._file_write.seek(self._write_pos)
+        yield
+        self._write_pos = self._file_write.tell()
+
     def _put_file(self, item):
-        _pickle.dump(item, self._file_write, _pickle.HIGHEST_PROTOCOL)
+        with self._put_file_wrapper():
+            _pickle.dump(item, self._file_write, _pickle.HIGHEST_PROTOCOL)
         self._put_done()
 
     def _put_done(self):
@@ -108,12 +116,19 @@ class FileQueue(Queue):
         self._get_done()
         return item
 
-    def _get_file(self):
+    @contextmanager
+    def _get_file_wrapper(self):
         self._file_write.flush()
-        try:
-            item = _pickle.load(self._file_read)
-        except EOFError:
-            raise Empty
+        self._file_read.seek(self._read_pos)
+        yield
+        self._read_pos = self._file_read.tell()
+
+    def _get_file(self):
+        with self._get_file_wrapper():
+            try:
+                item = _pickle.load(self._file_read)
+            except EOFError:
+                raise Empty
         self._get_done()
         return item
 
@@ -216,21 +231,19 @@ class LifoFileQueue(FileQueue):
         self._position_store_len = 8
         self._position_format_str = "%%0%ii" % self._position_store_len
 
-    def _init_fds(self):
-        self._file_read = self._file_write = _file_open(self._temp_file.name, "w+b")
-
     def _format_pos(self, relative_position):
         return self._position_format_str % relative_position
 
-    def _put_file(self, item):
-    #        self._file_write.seek(0, 2)
+    @contextmanager
+    def _put_file_wrapper(self):
         start_pos = self._file_write.tell()
-        FileQueue._put_file(self, item)
+        yield
         current_pos = self._file_write.tell()
         item_len = current_pos - start_pos
         self._file_write.write(self._format_pos(item_len))
 
-    def _get_file(self):
+    @contextmanager
+    def _get_file_wrapper(self):
         try:
             self._file_read.seek(-self._position_store_len, 1)
         except IOError as err:
@@ -240,7 +253,6 @@ class LifoFileQueue(FileQueue):
                 raise
         item_size = int(self._file_read.read(self._position_store_len))
         self._file_read.seek(-(self._position_store_len + item_size), 1)
-        item = FileQueue._get_file(self)
+        yield
         self._file_write.seek(-item_size, 1)
         self._file_write.truncate()
-        return item
