@@ -4,8 +4,14 @@ Changelog
 0.4.0 (2019-10-11)
 ------------------
 
+Windows OS now supported!
 - Fixed issue on windows, use a shared rw file descriptor. Can't use 2 separate r and w like unix based systems
 - Fixed issue for LifoFileQueue on py3, was trying to write str instead of bytes to file
+
+0.3.3 (2019-10-01)
+------------------
+
+- Fix for namespace issue on python 3
 
 0.3.2 (2017-07-13)
 ------------------
