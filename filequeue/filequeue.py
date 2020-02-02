@@ -57,6 +57,13 @@ class FileQueue(Queue):
     def _init_fds(self):
         self._file_write = self._file_read = self._temp_file
 
+    def __del__(self):
+        self.dispose()
+
+    def dispose(self):
+        self._file_read.close()
+        self._file_write.close()
+
     def _buffer_size(self):
         """
         Return the approximate size of the buffer (not reliable!).
@@ -189,6 +196,10 @@ class PriorityFileQueue(FileQueue):
         self._default_priority = default_priority
         self._queues = list()
         self._queue_index = dict()
+
+    def dispose(self):
+        for priority, q in self._queues:
+            q.dispose()
 
     def _get_queue(self, priority):
         queue = self._queue_index.get(priority)

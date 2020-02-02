@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.4.1 (2020-02-02)
+------------------
+
+- Clean up when disposing of the queue
+
 0.4.0 (2019-10-11) Windows OS now supported!
 ------------------
 
